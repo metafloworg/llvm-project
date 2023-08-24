@@ -19,12 +19,12 @@ jobs:
         os:
           - linux
     steps:
-      - name: ccache config
-        run: |
-          ccache --zero-stats
-          cache --show-config
-
       - uses: actions/checkout@v3
+
+      - name: sccache
+        run: |
+          sccache --zero-stats
+
       - name: Build and Test
         uses: llvm/actions/build-test-llvm-project@main
         env:
@@ -32,7 +32,11 @@ jobs:
           CXX: "clang++"
           LD: "LLD"
         with:
-          cmake_args: '-GNinja -DLLVM_ENABLE_PROJECTS="llvm" -DCMAKE_BUILD_TYPE=Release -DLLDB_INCLUDE_TESTS=OFF -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache'
+          cmake_args: '-GNinja -DLLVM_ENABLE_PROJECTS="llvm" -DCMAKE_BUILD_TYPE=Release -DLLDB_INCLUDE_TESTS=OFF -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache'
           build_target: 'check-all'
+
+      - name: sccache stats
+        run: |
+          sccache --show-stats
 
 
