@@ -32,7 +32,8 @@ jobs:
           CXX: "clang++"
           LD: "LLD"
         with:
-          cmake_args: '-GNinja -DLLVM_ENABLE_PROJECTS="llvm" -DCMAKE_BUILD_TYPE=Release -DLLDB_INCLUDE_TESTS=OFF -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache'
+          #  -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          cmake_args: '-GNinja -DLLVM_ENABLE_PROJECTS="llvm" -DCMAKE_BUILD_TYPE=Release -DLLDB_INCLUDE_TESTS=OFF'
           build_target: 'check-all'
 
       - name: sccache stats
