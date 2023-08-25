@@ -3040,7 +3040,7 @@ SDValue DAGCombiner::visitADDSAT(SDNode *N) {
     return N0;
 
   // If it cannot overflow, transform into an add.
-  if (DAG.computeOverflowForAdd(IsSigned, N0, N1) == SelectionDAG::OFK_Never)
+  if (DAG.willNotOverflowAdd(IsSigned, N0, N1))
     return DAG.getNode(ISD::ADD, DL, VT, N0, N1);
 
   return SDValue();
@@ -3310,7 +3310,7 @@ SDValue DAGCombiner::visitADDO(SDNode *N) {
     return CombineTo(N, N0, DAG.getConstant(0, DL, CarryVT));
 
   // If it cannot overflow, transform into an add.
-  if (DAG.computeOverflowForAdd(IsSigned, N0, N1) == SelectionDAG::OFK_Never)
+  if (DAG.willNotOverflowAdd(IsSigned, N0, N1))
     return CombineTo(N, DAG.getNode(ISD::ADD, DL, VT, N0, N1),
                      DAG.getConstant(0, DL, CarryVT));
 
@@ -4170,7 +4170,7 @@ SDValue DAGCombiner::visitSUBSAT(SDNode *N) {
     return N0;
 
   // If it cannot overflow, transform into an sub.
-  if (DAG.computeOverflowForSub(IsSigned, N0, N1) == SelectionDAG::OFK_Never)
+  if (DAG.willNotOverflowSub(IsSigned, N0, N1))
     return DAG.getNode(ISD::SUB, DL, VT, N0, N1);
 
   return SDValue();
@@ -4236,7 +4236,7 @@ SDValue DAGCombiner::visitSUBO(SDNode *N) {
     return CombineTo(N, N0, DAG.getConstant(0, DL, CarryVT));
 
   // If it cannot overflow, transform into an sub.
-  if (DAG.computeOverflowForSub(IsSigned, N0, N1) == SelectionDAG::OFK_Never)
+  if (DAG.willNotOverflowSub(IsSigned, N0, N1))
     return CombineTo(N, DAG.getNode(ISD::SUB, DL, VT, N0, N1),
                      DAG.getConstant(0, DL, CarryVT));
 
@@ -6117,6 +6117,13 @@ static SDValue foldAndOrOfSETCC(SDNode *LogicOp, SelectionDAG &DAG) {
         CC = CCL;
       }
     }
+
+    // Don't do this transform for sign bit tests. Let foldLogicOfSetCCs
+    // handle it using OR/AND.
+    if (CC == ISD::SETLT && isNullOrNullSplat(CommonValue))
+      CC = ISD::SETCC_INVALID;
+    else if (CC == ISD::SETGT && isAllOnesOrAllOnesSplat(CommonValue))
+      CC = ISD::SETCC_INVALID;
 
     if (CC != ISD::SETCC_INVALID) {
       unsigned NewOpcode;
@@ -21705,14 +21712,15 @@ SDValue DAGCombiner::visitEXTRACT_VECTOR_ELT(SDNode *N) {
     if (DAG.isKnownNeverZero(Index))
       return DAG.getUNDEF(ScalarVT);
 
-    // Check if the result type doesn't match the inserted element type. A
-    // SCALAR_TO_VECTOR may truncate the inserted element and the
-    // EXTRACT_VECTOR_ELT may widen the extracted vector.
+    // Check if the result type doesn't match the inserted element type. 
+    // The inserted element and extracted element may have mismatched bitwidth.
+    // As a result, EXTRACT_VECTOR_ELT may extend or truncate the extracted vector.
     SDValue InOp = VecOp.getOperand(0);
     if (InOp.getValueType() != ScalarVT) {
-      assert(InOp.getValueType().isInteger() && ScalarVT.isInteger() &&
-             InOp.getValueType().bitsGT(ScalarVT));
-      return DAG.getNode(ISD::TRUNCATE, DL, ScalarVT, InOp);
+      assert(InOp.getValueType().isInteger() && ScalarVT.isInteger());
+      if (InOp.getValueType().bitsGT(ScalarVT))
+        return DAG.getNode(ISD::TRUNCATE, DL, ScalarVT, InOp);
+      return DAG.getNode(ISD::ANY_EXTEND, DL, ScalarVT, InOp);
     }
     return InOp;
   }

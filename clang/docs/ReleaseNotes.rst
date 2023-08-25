@@ -94,10 +94,6 @@ C++2c Feature Support
 
 Resolutions to C++ Defect Reports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-- Implemented `CWG1473 <https://wg21.link/CWG1473>`_ which allows spaces after ``operator""``.
-  Clang used to err on the lack of space when the literal suffix identifier was invalid in
-  all the language modes, which contradicted the deprecation of the whitespaces.
-  Also turn on ``-Wdeprecated-literal-operator`` by default in all the language modes.
 
 C Language Changes
 ------------------
@@ -144,6 +140,9 @@ Improvements to Clang's diagnostics
   tautologies like ``x && !x`` and ``!x || x`` in expressions. This also
   makes ``-Winfinite-recursion`` diagnose more cases.
   (`#56035: <https://github.com/llvm/llvm-project/issues/56035>`_).
+- Clang constexpr evaluator now diagnoses compound assignment operators against
+  uninitialized variables as a read of uninitialized object.
+  (`#51536 <https://github.com/llvm/llvm-project/issues/51536>_`)
 
 Bug Fixes in This Version
 -------------------------
@@ -167,6 +166,12 @@ Bug Fixes in This Version
   ``await_suspend`` could be misoptimized, including accesses to the awaiter
   object itself.
   (`#56301 <https://github.com/llvm/llvm-project/issues/56301>`_)
+  The current solution may bring performance regressions if the awaiters have
+  non-static data members. See
+  `#64945 <https://github.com/llvm/llvm-project/issues/64945>`_ for details.
+- Clang now prints unnamed members in diagnostic messages instead of giving an
+  empty ''. Fixes
+  (`#63759 <https://github.com/llvm/llvm-project/issues/63759>`_)
 
 Bug Fixes to Compiler Builtins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -198,6 +203,15 @@ Bug Fixes to C++ Support
 
 - Update ``FunctionDeclBitfields.NumFunctionDeclBits``. This fixes:
   (`#64171 <https://github.com/llvm/llvm-project/issues/64171>`_).
+
+- Expressions producing ``nullptr`` are correctly evaluated
+  by the constant interpreter when appearing as the operand
+  of a binary comparision.
+  (`#64923 <https://github.com/llvm/llvm-project/issues/64923>_``)
+
+- Fix a crash when an immediate invocation is not a constant expression
+  and appear in an implicit cast.
+  (`#64949 <https://github.com/llvm/llvm-project/issues/64949>`_).
 
 Bug Fixes to AST Handling
 ^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -4442,6 +4442,10 @@ struct CompoundAssignSubobjectHandler {
       return foundPointer(Subobj, SubobjType);
     case APValue::Vector:
       return foundVector(Subobj, SubobjType);
+    case APValue::Indeterminate:
+      Info.FFDiag(E, diag::note_constexpr_access_uninit)
+          << /*read of=*/0 << /*uninitialized object=*/1;
+      return false;
     default:
       // FIXME: can this happen?
       Info.FFDiag(E);
@@ -13310,6 +13314,10 @@ EvaluateComparisonBinaryOperator(EvalInfo &Info, const BinaryOperator *E,
     // C++11 [expr.rel]p4, [expr.eq]p3: If two operands of type std::nullptr_t
     // are compared, the result is true of the operator is <=, >= or ==, and
     // false otherwise.
+    LValue Res;
+    if (!EvaluatePointer(E->getLHS(), Res, Info) ||
+        !EvaluatePointer(E->getRHS(), Res, Info))
+      return false;
     return Success(CmpResult::Equal, E);
   }
 

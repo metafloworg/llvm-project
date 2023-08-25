@@ -17,7 +17,6 @@
 #include "ToolChains/CSKYToolChain.h"
 #include "ToolChains/Clang.h"
 #include "ToolChains/CloudABI.h"
-#include "ToolChains/Contiki.h"
 #include "ToolChains/CrossWindows.h"
 #include "ToolChains/Cuda.h"
 #include "ToolChains/Darwin.h"
@@ -36,9 +35,7 @@
 #include "ToolChains/MSP430.h"
 #include "ToolChains/MSVC.h"
 #include "ToolChains/MinGW.h"
-#include "ToolChains/Minix.h"
 #include "ToolChains/MipsLinux.h"
-#include "ToolChains/Myriad.h"
 #include "ToolChains/NaCl.h"
 #include "ToolChains/NetBSD.h"
 #include "ToolChains/OHOS.h"
@@ -556,8 +553,7 @@ static llvm::Triple computeTargetTriple(const Driver &D,
   }
 
   // Skip further flag support on OSes which don't support '-m32' or '-m64'.
-  if (Target.getArch() == llvm::Triple::tce ||
-      Target.getOS() == llvm::Triple::Minix)
+  if (Target.getArch() == llvm::Triple::tce)
     return Target;
 
   // On AIX, the env OBJECT_MODE may affect the resulting arch variant.
@@ -6193,9 +6189,6 @@ const ToolChain &Driver::getToolChain(const ArgList &Args,
       else
         TC = std::make_unique<toolchains::FreeBSD>(*this, Target, Args);
       break;
-    case llvm::Triple::Minix:
-      TC = std::make_unique<toolchains::Minix>(*this, Target, Args);
-      break;
     case llvm::Triple::Linux:
     case llvm::Triple::ELFIAMCU:
       if (Target.getArch() == llvm::Triple::hexagon)
@@ -6269,9 +6262,6 @@ const ToolChain &Driver::getToolChain(const ArgList &Args,
     case llvm::Triple::PS5:
       TC = std::make_unique<toolchains::PS5CPU>(*this, Target, Args);
       break;
-    case llvm::Triple::Contiki:
-      TC = std::make_unique<toolchains::Contiki>(*this, Target, Args);
-      break;
     case llvm::Triple::Hurd:
       TC = std::make_unique<toolchains::Hurd>(*this, Target, Args);
       break;
@@ -6334,10 +6324,7 @@ const ToolChain &Driver::getToolChain(const ArgList &Args,
         TC = std::make_unique<toolchains::CSKYToolChain>(*this, Target, Args);
         break;
       default:
-        if (Target.getVendor() == llvm::Triple::Myriad)
-          TC = std::make_unique<toolchains::MyriadToolChain>(*this, Target,
-                                                              Args);
-        else if (toolchains::BareMetal::handlesTarget(Target))
+        if (toolchains::BareMetal::handlesTarget(Target))
           TC = std::make_unique<toolchains::BareMetal>(*this, Target, Args);
         else if (Target.isOSBinFormatELF())
           TC = std::make_unique<toolchains::Generic_ELF>(*this, Target, Args);
