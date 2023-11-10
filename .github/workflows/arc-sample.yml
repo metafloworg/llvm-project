@@ -3,9 +3,27 @@ on:
   workflow_dispatch:
 
 jobs:
-  Explore-GitHub-Actions:
+  Build-LLVM:
     # That is a name of helm installation.
     runs-on: arc-runner-set
     steps:
-    - run: sleep 60s
-    - run: echo "done!"
+      - uses: actions/checkout@v3
+
+      - name: sccache
+        run: |
+          sccache --zero-stats
+
+      - name: Build and Test
+        uses: llvm/actions/build-test-llvm-project@main
+        env:
+          CC: "clang"
+          CXX: "clang++"
+          LD: "LLD"
+        with:
+          cmake_args: '-GNinja -DLLVM_ENABLE_PROJECTS="llvm" -DCMAKE_BUILD_TYPE=Release -DLLDB_INCLUDE_TESTS=OFF -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache'
+          build_target: 'check-all'
+
+      - name: sccache stats
+        run: |
+          sccache --show-stats
+
