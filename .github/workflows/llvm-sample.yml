@@ -5,7 +5,7 @@ on:
 jobs:
   Build-LLVM:
     # That is a name of helm installation.
-    runs-on: arc-runner-set-default
+    runs-on: arc-runner-set
     steps:
       - uses: actions/checkout@v3
 

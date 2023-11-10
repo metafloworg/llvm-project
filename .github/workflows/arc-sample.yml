@@ -3,8 +3,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  Build-LLVM:
-    # That is a name of helm installation.
+  One-Minute:
     runs-on: arc-runner-set-default
     steps:
     - run: sleep 60s
